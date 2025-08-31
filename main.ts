@@ -388,7 +388,7 @@ class AwsWorkshopStack extends TerraformStack {
       // VPCを指定
       vpcId: vpc.id,
 
-      // ヘルスチェック設定  
+      // ヘルスチェック設定
       healthCheck: {
         enabled: true,
         path: '/', // ヘルスチェック用のパス（コンテナのヘルスチェックエンドポイント）
@@ -462,9 +462,11 @@ class AwsWorkshopStack extends TerraformStack {
       // イメージタグの可変性設定（Mutable: タグの上書き可能）
       imageTagMutability: 'MUTABLE',
       // 暗号化設定（AWS KMSを使用、AWS管理キー）
-      encryptionConfiguration: [{
-        encryptionType: 'KMS',
-      }],
+      encryptionConfiguration: [
+        {
+          encryptionType: 'KMS',
+        },
+      ],
       // スタック削除時の動作設定（ワークショップ用のため削除可能にする）
       forceDelete: true,
       tags: {
@@ -481,10 +483,12 @@ class AwsWorkshopStack extends TerraformStack {
     const ecsCluster = new EcsCluster(this, 'workshop-cluster', {
       name: `aws-workshop-cluster-${identifier}`,
       // Container Insights V2を有効化（モニタリング用）
-      setting: [{
-        name: 'containerInsights',
-        value: 'enabled',
-      }],
+      setting: [
+        {
+          name: 'containerInsights',
+          value: 'enabled',
+        },
+      ],
       tags: {
         Name: 'WorkshopCluster',
       },
@@ -494,16 +498,24 @@ class AwsWorkshopStack extends TerraformStack {
     // ECSタスク実行ロール作成
     // ===========================================
     // ECSがタスクを開始し、AWS APIを呼び出すために使用するロール
-    const taskExecutionRoleAssumePolicy = new DataAwsIamPolicyDocument(this, 'task-execution-assume-policy', {
-      statement: [{
-        effect: 'Allow',
-        principals: [{
-          type: 'Service',
-          identifiers: ['ecs-tasks.amazonaws.com'],
-        }],
-        actions: ['sts:AssumeRole'],
-      }],
-    });
+    const taskExecutionRoleAssumePolicy = new DataAwsIamPolicyDocument(
+      this,
+      'task-execution-assume-policy',
+      {
+        statement: [
+          {
+            effect: 'Allow',
+            principals: [
+              {
+                type: 'Service',
+                identifiers: ['ecs-tasks.amazonaws.com'],
+              },
+            ],
+            actions: ['sts:AssumeRole'],
+          },
+        ],
+      }
+    );
 
     const appTaskExecutionRole = new IamRole(this, 'app-task-execution-role', {
       name: `${identifier}-app-task-execution-role`,
@@ -523,14 +535,18 @@ class AwsWorkshopStack extends TerraformStack {
     // ECSタスクロール作成（コンテナ内からAWSサービスにアクセスする場合に使用）
     // ===========================================
     const taskRoleAssumePolicy = new DataAwsIamPolicyDocument(this, 'task-assume-policy', {
-      statement: [{
-        effect: 'Allow',
-        principals: [{
-          type: 'Service',
-          identifiers: ['ecs-tasks.amazonaws.com'],
-        }],
-        actions: ['sts:AssumeRole'],
-      }],
+      statement: [
+        {
+          effect: 'Allow',
+          principals: [
+            {
+              type: 'Service',
+              identifiers: ['ecs-tasks.amazonaws.com'],
+            },
+          ],
+          actions: ['sts:AssumeRole'],
+        },
+      ],
     });
 
     const appTaskRole = new IamRole(this, 'app-task-role', {
@@ -559,29 +575,34 @@ class AwsWorkshopStack extends TerraformStack {
         cpuArchitecture: 'ARM64',
       },
       // Appのコンテナを追加
-      containerDefinitions: JSON.stringify([{
-        name: 'AppContainer',
-        // ポート3000でHTTPサーバーを起動するシンプルなHTTPサーバー
-        image: 'nginx:alpine',
-        command: [
-          'sh', '-c',
-          'echo \'server { listen 3000; location / { return 200 "<h1>AWS Workshop - Ready for Deployment!</h1><p>Port 3000 HTTP Server is running.</p>"; add_header Content-Type text/html; } }\' > /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"',
-        ],
-        portMappings: [{
-          containerPort: 3000, // nginxサーバーは3000番ポートでリッスンする
-          protocol: 'tcp',
-        }],
-        logConfiguration: {
-          logDriver: 'awslogs',
-          options: {
-            'awslogs-group': `/ecs/${identifier}-nginx-server`,
-            'awslogs-region': 'ap-northeast-1',
-            'awslogs-stream-prefix': 'ecs-nginx-server',
-            'awslogs-create-group': 'true',
+      containerDefinitions: JSON.stringify([
+        {
+          name: 'AppContainer',
+          // ポート3000でHTTPサーバーを起動するシンプルなHTTPサーバー
+          image: 'nginx:alpine',
+          command: [
+            'sh',
+            '-c',
+            'echo \'server { listen 3000; location / { return 200 "<h1>AWS Workshop - Ready for Deployment!</h1><p>Port 3000 HTTP Server is running.</p>"; add_header Content-Type text/html; } }\' > /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"',
+          ],
+          portMappings: [
+            {
+              containerPort: 3000, // nginxサーバーは3000番ポートでリッスンする
+              protocol: 'tcp',
+            },
+          ],
+          logConfiguration: {
+            logDriver: 'awslogs',
+            options: {
+              'awslogs-group': `/ecs/${identifier}-nginx-server`,
+              'awslogs-region': 'ap-northeast-1',
+              'awslogs-stream-prefix': 'ecs-nginx-server',
+              'awslogs-create-group': 'true',
+            },
           },
+          essential: true,
         },
-        essential: true,
-      }]),
+      ]),
       tags: {
         Name: 'AppTaskDefinition',
       },
@@ -607,11 +628,13 @@ class AwsWorkshopStack extends TerraformStack {
         assignPublicIp: false, // プライベートサブネットに配置するためパブリックIPは不要
       },
       // ALBのターゲットグループにサービスを関連付ける
-      loadBalancer: [{
-        targetGroupArn: targetGroup.arn,
-        containerName: 'AppContainer',
-        containerPort: 3000,
-      }],
+      loadBalancer: [
+        {
+          targetGroupArn: targetGroup.arn,
+          containerName: 'AppContainer',
+          containerPort: 3000,
+        },
+      ],
       // サービスのヘルスチェック猶予期間
       healthCheckGracePeriodSeconds: 60,
       // ローリングアップデート戦略を指定
