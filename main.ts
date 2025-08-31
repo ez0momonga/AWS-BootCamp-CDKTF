@@ -17,6 +17,7 @@ import { LbTargetGroup } from './.gen/providers/aws/lb-target-group';
 import { LbListener } from './.gen/providers/aws/lb-listener';
 import { EcrRepository } from './.gen/providers/aws/ecr-repository';
 import { EcsCluster } from './.gen/providers/aws/ecs-cluster';
+import { EcsClusterCapacityProviders } from './.gen/providers/aws/ecs-cluster-capacity-providers';
 import { IamRole } from './.gen/providers/aws/iam-role';
 import { IamRolePolicyAttachment } from './.gen/providers/aws/iam-role-policy-attachment';
 import { EcsTaskDefinition } from './.gen/providers/aws/ecs-task-definition';
@@ -74,7 +75,7 @@ class AwsWorkshopStack extends TerraformStack {
     // パブリックサブネット 1
     const publicSubnet1 = new Subnet(this, 'public-subnet-1', {
       vpcId: vpc.id,
-      cidrBlock: '10.0.1.0/24',
+      cidrBlock: '10.0.0.0/24',
       availabilityZone: `\${${availabilityZones.fqn}.names[0]}`,
       mapPublicIpOnLaunch: true,
       tags: {
@@ -86,7 +87,7 @@ class AwsWorkshopStack extends TerraformStack {
     // パブリックサブネット 2
     const publicSubnet2 = new Subnet(this, 'public-subnet-2', {
       vpcId: vpc.id,
-      cidrBlock: '10.0.2.0/24',
+      cidrBlock: '10.0.1.0/24',
       availabilityZone: `\${${availabilityZones.fqn}.names[1]}`,
       mapPublicIpOnLaunch: true,
       tags: {
@@ -98,7 +99,7 @@ class AwsWorkshopStack extends TerraformStack {
     // プライベートサブネット 1
     const privateSubnet1 = new Subnet(this, 'private-subnet-1', {
       vpcId: vpc.id,
-      cidrBlock: '10.0.3.0/24',
+      cidrBlock: '10.0.2.0/24',
       availabilityZone: `\${${availabilityZones.fqn}.names[0]}`,
       mapPublicIpOnLaunch: false,
       tags: {
@@ -110,7 +111,7 @@ class AwsWorkshopStack extends TerraformStack {
     // プライベートサブネット 2
     const privateSubnet2 = new Subnet(this, 'private-subnet-2', {
       vpcId: vpc.id,
-      cidrBlock: '10.0.4.0/24',
+      cidrBlock: '10.0.3.0/24',
       availabilityZone: `\${${availabilityZones.fqn}.names[1]}`,
       mapPublicIpOnLaunch: false,
       tags: {
@@ -486,12 +487,22 @@ class AwsWorkshopStack extends TerraformStack {
       setting: [
         {
           name: 'containerInsights',
-          value: 'enabled',
+          value: 'enhanced',
         },
       ],
       tags: {
         Name: 'WorkshopCluster',
       },
+    });
+
+    // ===========================================
+    // ECS Cluster Capacity Provider Associations 作成
+    // ===========================================
+    // Fargateキャパシティプロバイダーを有効化（CDKの場合は自動で作成される）
+    new EcsClusterCapacityProviders(this, 'workshop-cluster-capacity-providers', {
+      clusterName: ecsCluster.name,
+      capacityProviders: ['FARGATE', 'FARGATE_SPOT'],
+      defaultCapacityProviderStrategy: [],
     });
 
     // ===========================================
