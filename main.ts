@@ -23,6 +23,8 @@ import { IamRolePolicyAttachment } from './.gen/providers/aws/iam-role-policy-at
 import { EcsTaskDefinition } from './.gen/providers/aws/ecs-task-definition';
 import { EcsService } from './.gen/providers/aws/ecs-service';
 import { DataAwsIamPolicyDocument } from './.gen/providers/aws/data-aws-iam-policy-document';
+import { CloudwatchLogGroup } from './.gen/providers/aws/cloudwatch-log-group';
+import { IamPolicy } from './.gen/providers/aws/iam-policy';
 
 interface AwsWorkshopStackProps {
   readonly identifier?: string;
@@ -569,6 +571,41 @@ class AwsWorkshopStack extends TerraformStack {
     });
 
     // ===========================================
+    // CloudWatch Log Group 作成 (ECS用)
+    // ===========================================
+    // ECSタスクのログを保存するためのCloudWatch Log Group
+    // CDKと同じ設定で作成（保持期間30日、削除時の動作）
+    const appContainerLogGroup = new CloudwatchLogGroup(this, 'app-container-log-group', {
+      name: `/ecs/aws-workshop-app-${identifier}`,
+      retentionInDays: 30,
+      skipDestroy: false, // CDKでは削除可能な設定
+      tags: {
+        Name: 'AppContainerLogGroup',
+      },
+    });
+
+    // CloudWatch Logs 権限ポリシー（CDKと同じ設定）
+    const logsPolicy = new DataAwsIamPolicyDocument(this, 'logs-policy', {
+      statement: [
+        {
+          effect: 'Allow',
+          actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+          resources: [`${appContainerLogGroup.arn}:*`],
+        },
+      ],
+    });
+
+    const taskExecutionLogsPolicy = new IamPolicy(this, 'task-execution-logs-policy', {
+      name: `${identifier}-task-execution-logs-policy`,
+      policy: logsPolicy.json,
+    });
+
+    new IamRolePolicyAttachment(this, 'task-execution-logs-policy-attachment', {
+      role: appTaskExecutionRole.name,
+      policyArn: taskExecutionLogsPolicy.arn,
+    });
+
+    // ===========================================
     // ECS Appタスク定義
     // ===========================================
     // サービスを初回作成するために必要な、Appのタスク定義
@@ -605,10 +642,9 @@ class AwsWorkshopStack extends TerraformStack {
           logConfiguration: {
             logDriver: 'awslogs',
             options: {
-              'awslogs-group': `/ecs/${identifier}-nginx-server`,
+              'awslogs-group': appContainerLogGroup.name,
               'awslogs-region': 'ap-northeast-1',
               'awslogs-stream-prefix': 'ecs-nginx-server',
-              'awslogs-create-group': 'true',
             },
           },
           essential: true,
@@ -648,10 +684,13 @@ class AwsWorkshopStack extends TerraformStack {
       ],
       // サービスのヘルスチェック猶予期間
       healthCheckGracePeriodSeconds: 60,
-      // ローリングアップデート戦略を指定
+      // ローリングアップデート戦略を指定（CDKと同じ設定）
       deploymentConfiguration: {
         strategy: 'ROLLING',
       },
+      // デプロイ時の設定（CDKと同じ値に設定）
+      deploymentMaximumPercent: 200, // 最大200%のタスクを起動可能
+      deploymentMinimumHealthyPercent: 50, // 最低50%の正常タスクを保持
       tags: {
         Name: 'WorkshopFargateService',
       },
