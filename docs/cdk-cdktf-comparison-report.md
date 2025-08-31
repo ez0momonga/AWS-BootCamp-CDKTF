@@ -69,8 +69,8 @@ setting: [{
 | AWS::EC2::InternetGateway | aws_internet_gateway | ✅ |
 | AWS::EC2::NatGateway×2 | aws_nat_gateway×2 | ✅ |
 | AWS::EC2::EIP×2 | aws_eip×2 | ✅ |
-| AWS::EC2::RouteTable×4 | aws_route_table×4 | ✅ |
-| AWS::EC2::Route×6 | aws_route×6 | ✅ |
+| AWS::EC2::RouteTable×4 | aws_route_table×3 | ✅ |
+| AWS::EC2::Route×6 | aws_route×3 | ✅ |
 | AWS::EC2::RouteTableAssociation×4 | aws_route_table_association×4 | ✅ |
 
 ### Security Groups (✅ 完全一致)
@@ -101,7 +101,7 @@ setting: [{
 |-------------|---------------|------|
 | AWS::ECR::Repository | aws_ecr_repository.workshop-repository | ✅ |
 | AWS::IAM::Role×2 | aws_iam_role×2 | ✅ |
-| AWS::IAM::Policy×1 | aws_iam_role_policy_attachment×1 | ✅ |
+| AWS::IAM::Policy×1 | aws_iam_role_policy_attachment×2 | ✅ |
 
 ## CloudFormation Outputs 対応 (✅ 完全対応)
 
