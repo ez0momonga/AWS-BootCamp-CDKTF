@@ -578,7 +578,7 @@ class AwsWorkshopStack extends TerraformStack {
     const appContainerLogGroup = new CloudwatchLogGroup(this, 'app-container-log-group', {
       name: `/ecs/aws-workshop-app-${identifier}`,
       retentionInDays: 30,
-      skipDestroy: false, // CDKでは削除可能な設定
+      skipDestroy: true, // 学習教材用：削除時にスキップして手動削除を回避
       tags: {
         Name: 'AppContainerLogGroup',
       },
