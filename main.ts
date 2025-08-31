@@ -1,5 +1,9 @@
+import * as dotenv from 'dotenv';
 import { Construct } from 'constructs';
 import { App, TerraformStack, TerraformOutput } from 'cdktf';
+
+// Load environment variables from .env file
+dotenv.config();
 import { AwsProvider } from './.gen/providers/aws/provider';
 import { Vpc } from './.gen/providers/aws/vpc';
 import { Subnet } from './.gen/providers/aws/subnet';
@@ -67,7 +71,7 @@ class AwsWorkshopStack extends TerraformStack {
       enableDnsHostnames: true,
       enableDnsSupport: true,
       tags: {
-        Name: 'WorkshopVpc',
+        Name: `WorkshopVpc-${identifier}`,
       },
     });
 
@@ -81,7 +85,7 @@ class AwsWorkshopStack extends TerraformStack {
       availabilityZone: `\${${availabilityZones.fqn}.names[0]}`,
       mapPublicIpOnLaunch: true,
       tags: {
-        Name: 'PublicSubnet1',
+        Name: `PublicSubnet1-${identifier}`,
         Type: 'Public',
       },
     });
@@ -93,7 +97,7 @@ class AwsWorkshopStack extends TerraformStack {
       availabilityZone: `\${${availabilityZones.fqn}.names[1]}`,
       mapPublicIpOnLaunch: true,
       tags: {
-        Name: 'PublicSubnet2',
+        Name: `PublicSubnet2-${identifier}`,
         Type: 'Public',
       },
     });
@@ -105,7 +109,7 @@ class AwsWorkshopStack extends TerraformStack {
       availabilityZone: `\${${availabilityZones.fqn}.names[0]}`,
       mapPublicIpOnLaunch: false,
       tags: {
-        Name: 'PrivateSubnet1',
+        Name: `PrivateSubnet1-${identifier}`,
         Type: 'Private',
       },
     });
@@ -117,7 +121,7 @@ class AwsWorkshopStack extends TerraformStack {
       availabilityZone: `\${${availabilityZones.fqn}.names[1]}`,
       mapPublicIpOnLaunch: false,
       tags: {
-        Name: 'PrivateSubnet2',
+        Name: `PrivateSubnet2-${identifier}`,
         Type: 'Private',
       },
     });
@@ -128,7 +132,7 @@ class AwsWorkshopStack extends TerraformStack {
     const internetGateway = new InternetGateway(this, 'internet-gateway', {
       vpcId: vpc.id,
       tags: {
-        Name: 'WorkshopIgw',
+        Name: `WorkshopIgw-${identifier}`,
       },
     });
 
@@ -138,7 +142,7 @@ class AwsWorkshopStack extends TerraformStack {
     const natEip1 = new Eip(this, 'nat-eip-1', {
       domain: 'vpc',
       tags: {
-        Name: 'NatEip1',
+        Name: `NatEip1-${identifier}`,
       },
       dependsOn: [internetGateway],
     });
@@ -146,7 +150,7 @@ class AwsWorkshopStack extends TerraformStack {
     const natEip2 = new Eip(this, 'nat-eip-2', {
       domain: 'vpc',
       tags: {
-        Name: 'NatEip2',
+        Name: `NatEip2-${identifier}`,
       },
       dependsOn: [internetGateway],
     });
@@ -158,7 +162,7 @@ class AwsWorkshopStack extends TerraformStack {
       allocationId: natEip1.id,
       subnetId: publicSubnet1.id,
       tags: {
-        Name: 'NatGateway1',
+        Name: `NatGateway1-${identifier}`,
       },
       dependsOn: [internetGateway],
     });
@@ -167,7 +171,7 @@ class AwsWorkshopStack extends TerraformStack {
       allocationId: natEip2.id,
       subnetId: publicSubnet2.id,
       tags: {
-        Name: 'NatGateway2',
+        Name: `NatGateway2-${identifier}`,
       },
       dependsOn: [internetGateway],
     });
@@ -179,7 +183,7 @@ class AwsWorkshopStack extends TerraformStack {
     const publicRouteTable = new RouteTable(this, 'public-route-table', {
       vpcId: vpc.id,
       tags: {
-        Name: 'PublicRouteTable',
+        Name: `PublicRouteTable-${identifier}`,
       },
     });
 
@@ -205,7 +209,7 @@ class AwsWorkshopStack extends TerraformStack {
     const privateRouteTable1 = new RouteTable(this, 'private-route-table-1', {
       vpcId: vpc.id,
       tags: {
-        Name: 'PrivateRouteTable1',
+        Name: `PrivateRouteTable1-${identifier}`,
       },
     });
 
@@ -226,7 +230,7 @@ class AwsWorkshopStack extends TerraformStack {
     const privateRouteTable2 = new RouteTable(this, 'private-route-table-2', {
       vpcId: vpc.id,
       tags: {
-        Name: 'PrivateRouteTable2',
+        Name: `PrivateRouteTable2-${identifier}`,
       },
     });
 

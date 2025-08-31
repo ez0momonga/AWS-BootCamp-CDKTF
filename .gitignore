@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 # dev
 .claude
 .serena
+
+# Environment variables
+.env
