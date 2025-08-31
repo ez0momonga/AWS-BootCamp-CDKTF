@@ -584,25 +584,46 @@ class AwsWorkshopStack extends TerraformStack {
       },
     });
 
-    // CloudWatch Logs 権限ポリシー（CDKと同じ設定）
-    const logsPolicy = new DataAwsIamPolicyDocument(this, 'logs-policy', {
-      statement: [
-        {
-          effect: 'Allow',
-          actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
-          resources: [`${appContainerLogGroup.arn}:*`],
-        },
-      ],
+    // Task Execution Role 追加権限ポリシー（CDKと同じ設定）
+    const taskExecutionPolicy = new DataAwsIamPolicyDocument(
+      this,
+      'task-execution-policy-document',
+      {
+        statement: [
+          {
+            // CloudWatch Logs権限
+            effect: 'Allow',
+            actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+            resources: [`${appContainerLogGroup.arn}:*`],
+          },
+          {
+            // ECRリポジトリからのイメージプル権限
+            effect: 'Allow',
+            actions: [
+              'ecr:BatchCheckLayerAvailability',
+              'ecr:BatchGetImage',
+              'ecr:GetDownloadUrlForLayer',
+            ],
+            resources: [ecrRepository.arn],
+          },
+          {
+            // ECR認証権限（全リソース対象）
+            effect: 'Allow',
+            actions: ['ecr:GetAuthorizationToken'],
+            resources: ['*'],
+          },
+        ],
+      }
+    );
+
+    const taskExecutionAdditionalPolicy = new IamPolicy(this, 'task-execution-additional-policy', {
+      name: `${identifier}-task-execution-additional-policy`,
+      policy: taskExecutionPolicy.json,
     });
 
-    const taskExecutionLogsPolicy = new IamPolicy(this, 'task-execution-logs-policy', {
-      name: `${identifier}-task-execution-logs-policy`,
-      policy: logsPolicy.json,
-    });
-
-    new IamRolePolicyAttachment(this, 'task-execution-logs-policy-attachment', {
+    new IamRolePolicyAttachment(this, 'task-execution-additional-policy-attachment', {
       role: appTaskExecutionRole.name,
-      policyArn: taskExecutionLogsPolicy.arn,
+      policyArn: taskExecutionAdditionalPolicy.arn,
     });
 
     // ===========================================
