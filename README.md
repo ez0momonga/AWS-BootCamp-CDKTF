@@ -11,8 +11,22 @@
 - AWS CLI（設定済み）
 - Terraform CLI
 
+### 必要なツールのインストール（Mac）
+
+Homebrewを使用して必要なツールをインストールします：
+
+```bash
+# AWS CLIのインストール
+brew install awscli
+
+# Terraform CLIのインストール
+brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+```
+
 ### AWS 認証設定
 
+推奨：AWS SSOを使用
 ```bash
 # AWS SSO でログイン
 aws sso login
@@ -24,13 +38,32 @@ aws sso login --profile develop
 aws sts get-caller-identity
 ```
 
-> **注意**: プロファイル名（`develop`など）は事前にAWS CLI設定ファイル（`~/.aws/config`）で設定されている必要があります。講師から指定されたプロファイル名を使用してください。
+> **注意**: プロファイル名（`develop`など）は事前にAWS CLI設定ファイル（`~/.aws/config`）で設定されている必要があります。
 
 AWS プロファイルを使用する場合は環境変数で指定：
 ```bash
 # AWS プロファイルを指定（SSOを使用する場合）
 export AWS_PROFILE=develop
 ```
+
+<details>
+<summary>🔧 初心者向け：従来のAWS CLI設定方法（オプション）</summary>
+
+SSOを使用しない場合の従来の設定方法：
+
+```bash
+# 対話型で設定
+aws configure
+```
+
+または環境変数で設定：
+```bash
+export AWS_ACCESS_KEY_ID=your_access_key_id
+export AWS_SECRET_ACCESS_KEY=your_secret_access_key
+export AWS_DEFAULT_REGION=ap-northeast-1
+```
+
+</details>
 
 ## プロジェクトのセットアップ
 
