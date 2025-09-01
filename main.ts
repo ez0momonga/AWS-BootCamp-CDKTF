@@ -27,7 +27,6 @@ import { IamRolePolicyAttachment } from './.gen/providers/aws/iam-role-policy-at
 import { EcsTaskDefinition } from './.gen/providers/aws/ecs-task-definition';
 import { EcsService } from './.gen/providers/aws/ecs-service';
 import { DataAwsIamPolicyDocument } from './.gen/providers/aws/data-aws-iam-policy-document';
-import { CloudwatchLogGroup } from './.gen/providers/aws/cloudwatch-log-group';
 import { IamPolicy } from './.gen/providers/aws/iam-policy';
 
 interface AwsWorkshopStackProps {
@@ -575,31 +574,17 @@ class AwsWorkshopStack extends TerraformStack {
     });
 
     // ===========================================
-    // CloudWatch Log Group 作成 (ECS用)
+    // CloudWatch Log Group は ECS が自動作成
     // ===========================================
-    // ECSタスクのログを保存するためのCloudWatch Log Group
-    // CDKと同じ設定で作成（保持期間30日、削除時の動作）
-    const appContainerLogGroup = new CloudwatchLogGroup(this, 'app-container-log-group', {
-      name: `/ecs/aws-workshop-app-${identifier}`,
-      retentionInDays: 30,
-      skipDestroy: true,
-      tags: {
-        Name: 'AppContainerLogGroup',
-      },
-    });
+    // ECSタスクが自動でCloudWatch Log Groupを作成するため、明示的な定義は不要
+    // 'awslogs-create-group': 'true' オプションで自動作成される
 
-    // Task Execution Role 追加権限ポリシー（CDKと同じ設定）
+    // Task Execution Role 追加権限ポリシー（ECRのみ、CloudWatch LogsはECS自動管理）
     const taskExecutionPolicy = new DataAwsIamPolicyDocument(
       this,
       'task-execution-policy-document',
       {
         statement: [
-          {
-            // CloudWatch Logs権限
-            effect: 'Allow',
-            actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
-            resources: [`${appContainerLogGroup.arn}:*`],
-          },
           {
             // ECRリポジトリからのイメージプル権限
             effect: 'Allow',
@@ -667,9 +652,10 @@ class AwsWorkshopStack extends TerraformStack {
           logConfiguration: {
             logDriver: 'awslogs',
             options: {
-              'awslogs-group': appContainerLogGroup.name,
+              'awslogs-group': `/ecs/aws-workshop-app-${identifier}`,
               'awslogs-region': 'ap-northeast-1',
               'awslogs-stream-prefix': 'ecs-nginx-server',
+              'awslogs-create-group': 'true', // ECSが自動でLog Groupを作成
             },
           },
           essential: true,
