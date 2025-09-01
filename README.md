@@ -11,20 +11,25 @@
 - AWS CLI（設定済み）
 - Terraform CLI
 
-### AWS CLIの設定
-
-プロジェクトを使用する前に、AWSクレデンシャルを設定してください：
+### AWS 認証設定
 
 ```bash
-aws configure
+# AWS SSO でログイン
+aws sso login
+
+# プロファイルを指定してログインする場合
+aws sso login --profile develop
+
+# 設定確認
+aws sts get-caller-identity
 ```
 
-または、環境変数で設定：
+> **注意**: プロファイル名（`develop`など）は事前にAWS CLI設定ファイル（`~/.aws/config`）で設定されている必要があります。講師から指定されたプロファイル名を使用してください。
 
+AWS プロファイルを使用する場合は環境変数で指定：
 ```bash
-export AWS_ACCESS_KEY_ID=your_access_key_id
-export AWS_SECRET_ACCESS_KEY=your_secret_access_key
-export AWS_DEFAULT_REGION=ap-northeast-1
+# AWS プロファイルを指定（SSOを使用する場合）
+export AWS_PROFILE=develop
 ```
 
 ## プロジェクトのセットアップ
@@ -58,11 +63,7 @@ cp .env.sample .env
 npm run get
 ```
 
-### 5. TypeScriptのコンパイル
 
-```bash
-npm run build
-```
 
 ## 基本的な使い方
 
@@ -188,12 +189,10 @@ npx cdktf destroy [stack-name]
 | `npm run lint` | ESLintでコードの問題をチェック・修正 |
 | `npm run lint:check` | ESLintでコードの問題をチェックのみ（修正なし） |
 
-### ビルド・コンパイル
+### 開発サポート
 
 | コマンド | 説明 |
 |---------|--------|
-| `npm run build` | TypeScriptをJavaScriptにコンパイル |
-| `npm run compile` | TypeScriptをコンパイル（pretty出力付き） |
 | `npm run watch` | ファイル変更を監視して自動コンパイル |
 
 ### テスト
